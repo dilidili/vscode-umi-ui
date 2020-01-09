@@ -1,10 +1,14 @@
 import { Terminal, ExtensionContext, window, workspace, commands, WorkspaceFolder } from 'vscode';
-// import { readFile } from './util/fs';
+import * as io from 'socket.io-client';
+//@ts-ignore
+const parser = require('./util/engine.io-parser');
+
 const { readFileSync } = require('fs');
 const path = require('path');
 
 export default class UmiUI {
   private _terminal: Terminal | undefined;
+  private _sock: SocketIOClient.Manager | undefined;
 
   constructor(
     private _context: ExtensionContext,
@@ -75,18 +79,43 @@ export default class UmiUI {
     }
   }
 
+  initSocket() {
+    if (!this._sock) {
+      this._sock = new io.Manager('http://localhost:3001/umiui', {
+        reconnectionDelay: 3000,
+
+        // @ts-ignore
+        parser: parser,
+      });
+
+      const sock = this._sock as SocketIOClient.Manager;
+
+      sock.on('connect', (err: any) => {
+        console.log('connect');
+      });
+
+      sock.on('connect_error', (err: any) => {
+        console.log(err);
+      });
+
+      sock.on('reconnect_attempt', (attemp: number) => {
+        console.log(attemp);
+      });
+    }
+  }
 
   async start() {
     const { _terminal, _context } = this;
 
     const umiWorkspaceFolder = await this.getUmiProject();
-    if (umiWorkspaceFolder) {
-      console.log(umiWorkspaceFolder);
-    }
+    if (!umiWorkspaceFolder) return;
 
-    // if (!_terminal) {
-    //   this._terminal = window.createTerminal();
-    //   this._terminal.show();
-    // }
+    if (!_terminal) {
+      this._terminal = window.createTerminal('Umi UI');
+      this._terminal.show();
+      this._terminal.sendText('UMI_UI_BROWSER=none umi ui');
+
+      this.initSocket();
+    }
   }
 };
