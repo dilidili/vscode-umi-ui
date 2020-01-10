@@ -1,33 +1,33 @@
 import { Terminal, ExtensionContext, window, workspace, commands, WorkspaceFolder } from 'vscode';
-import * as io from 'socket.io-client';
-//@ts-ignore
-const parser = require('./util/engine.io-parser');
+import { Socket } from './Socket';
 
 const { readFileSync } = require('fs');
 const path = require('path');
 
 export default class UmiUI {
   private _terminal: Terminal | undefined;
-  private _sock: SocketIOClient.Manager | undefined;
+  private _sock: Socket;
 
   constructor(
     private _context: ExtensionContext,
-  ) {}
+  ) {
+    this._sock = new Socket('http://localhost:3001/umiui');
+  }
 
   async validateUmiProject(projects: WorkspaceFolder[], depressError = true) {
     if (projects && projects.length > 0) {
-      for(let i = 0; i < projects.length; i++) {
+      for (let i = 0; i < projects.length; i++) {
         const project = projects[i];
 
         try {
-          const pkg = readFileSync(await project.uri.with({ path: path.join(project.uri.fsPath, 'package.json' ) }).fsPath);
+          const pkg = readFileSync(await project.uri.with({ path: path.join(project.uri.fsPath, 'package.json') }).fsPath);
           const pkgJSON = JSON.parse(pkg);
-          const containUmi = Object.keys({...(pkgJSON.dependencies || {}), ...(pkgJSON.devDependencies || {})}).indexOf('umi') >= 0;
+          const containUmi = Object.keys({ ...(pkgJSON.dependencies || {}), ...(pkgJSON.devDependencies || {}) }).indexOf('umi') >= 0;
 
           if (containUmi) {
             return Promise.resolve(project);
           }
-        } catch(err) {
+        } catch (err) {
           if (!depressError) {
             window.showErrorMessage('Please select a valid Umi project');
           }
@@ -60,7 +60,7 @@ export default class UmiUI {
               if (e.added && e.added.length) {
                 listenWorkspaceChange.dispose();
 
-                validProject = await this.validateUmiProject(e.added as WorkspaceFolder[], false); 
+                validProject = await this.validateUmiProject(e.added as WorkspaceFolder[], false);
                 if (!validProject) {
                   window.showErrorMessage('Please select a valid Umi project');
                   c(null);
@@ -79,43 +79,35 @@ export default class UmiUI {
     }
   }
 
-  initSocket() {
-    if (!this._sock) {
-      this._sock = new io.Manager('http://localhost:3001/umiui', {
-        reconnectionDelay: 3000,
+  openWorkspace(workspace: WorkspaceFolder) {
+    const { _terminal, } = this;
 
-        // @ts-ignore
-        parser: parser,
-      });
-
-      const sock = this._sock as SocketIOClient.Manager;
-
-      sock.on('connect', (err: any) => {
-        console.log('connect');
-      });
-
-      sock.on('connect_error', (err: any) => {
-        console.log(err);
-      });
-
-      sock.on('reconnect_attempt', (attemp: number) => {
-        console.log(attemp);
-      });
-    }
-  }
-
-  async start() {
-    const { _terminal, _context } = this;
-
-    const umiWorkspaceFolder = await this.getUmiProject();
-    if (!umiWorkspaceFolder) return;
 
     if (!_terminal) {
       this._terminal = window.createTerminal('Umi UI');
       this._terminal.show();
       this._terminal.sendText('UMI_UI_BROWSER=none umi ui');
-
-      this.initSocket();
     }
+
+    this._sock.fetch({
+      'type': '@@project/list',
+    }, '@@project/list/success').then((res) => {
+      const resObj = JSON.parse(res);
+
+      this._sock.send({
+        'type': '@@project/add',
+        'payload': {
+          'path': workspace.uri.fsPath,
+          'name': workspace.name,
+        },
+      });
+    });
+  }
+
+  async start() {
+    const umiWorkspaceFolder = await this.getUmiProject();
+    if (!umiWorkspaceFolder) return;
+
+    this.openWorkspace(umiWorkspaceFolder);
   }
 };
