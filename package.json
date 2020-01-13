@@ -15,6 +15,21 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [{
+				"id": "umi-ui",
+				"title": "Umi UI",
+				"icon": "media/rice.svg"
+			}]
+		},
+		"views": {
+			"umi-ui": [
+				{
+					"id": "config",
+					"name": "Config"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "extension.umiUI",

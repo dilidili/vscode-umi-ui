@@ -82,7 +82,6 @@ export default class UmiUI {
   openWorkspace(workspace: WorkspaceFolder) {
     const { _terminal, } = this;
 
-
     if (!_terminal) {
       this._terminal = window.createTerminal('Umi UI');
       this._terminal.show();
@@ -93,15 +92,21 @@ export default class UmiUI {
       'type': '@@project/list',
     }, '@@project/list/success').then((res) => {
       const resObj = JSON.parse(res);
+      const alreadyAdded = Object.keys(resObj.payload.data.projectsByKey).find(key => resObj.payload.data.projectsByKey[key].path === workspace.uri.fsPath);
 
-      this._sock.send({
-        'type': '@@project/add',
-        'payload': {
-          'path': workspace.uri.fsPath,
-          'name': workspace.name,
-        },
-      });
+      if (!alreadyAdded) {
+        this._sock.send({
+          'type': '@@project/add',
+          'payload': {
+            'path': workspace.uri.fsPath,
+            'name': workspace.name,
+          },
+        });
+      }
     });
+
+    // set current umi
+    this._context.globalState.update('cwd', workspace.uri.fsPath);
   }
 
   async start() {
