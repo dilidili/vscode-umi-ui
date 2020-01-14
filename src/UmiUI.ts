@@ -94,7 +94,7 @@ export default class UmiUI {
       const resObj = JSON.parse(res);
       const alreadyAdded = Object.keys(resObj.payload.data.projectsByKey).find(key => resObj.payload.data.projectsByKey[key].path === workspace.uri.fsPath);
 
-      if (!alreadyAdded) {
+      if (!alreadyAdded && this._sock) {
         this._sock.send({
           'type': '@@project/add',
           'payload': {

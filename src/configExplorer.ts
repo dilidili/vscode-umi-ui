@@ -3,6 +3,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 const configFiles = ['.umirc.ts', '.umirc.js', 'config/config.ts', 'config/config.js'];
+const ConfigDoc: {
+  [key: string]: any,
+// @ts-ignore
+} = fs.readFileSync(path.join(__dirname, '../media/ConfigDoc.md'), 'utf8').split('### ').filter(v => !!v).reduce((r: Object, v: string): Object => (r[v.split('\n')[0]] = "### " + v.trim(), r), {});
 
 vscode.languages.registerHoverProvider({
   language: 'typescript',
@@ -10,9 +14,12 @@ vscode.languages.registerHoverProvider({
   pattern: `**/*{${configFiles.join(',')}}`
 }, {
   provideHover(document, position, token) {
-    return {
-      contents: ['Hover Content']
-    };
+    const targetWord = document.getText(document.getWordRangeAtPosition(position));
+    if (ConfigDoc[targetWord]) {
+      return new vscode.Hover(new vscode.MarkdownString(ConfigDoc[targetWord]));
+    } else {
+      return null;
+    }
   }
 });
 
@@ -26,6 +33,20 @@ export function getConfigFile(cwd: string): string {
   return '';
 }
 
+function getConfigWebviewContent() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration</title>
+</head>
+<body>
+  <iframe src="https://umijs.org/zh/config/" />
+</body>
+</html>`;
+}
+
 export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
 
   private _onDidChangeTreeData: vscode.EventEmitter<ConfigTreeItem | undefined> = new vscode.EventEmitter<ConfigTreeItem | undefined>();
@@ -35,7 +56,17 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
     private _context: vscode.ExtensionContext,
   ) {
     vscode.commands.registerCommand('extension.openUmiConfig', () => {
-      vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(getConfigFile(_context.globalState.get('cwd') || '')))
+      vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(getConfigFile(_context.globalState.get('cwd') || ''))).then(() => {
+        const panel = vscode.window.createWebviewPanel(
+          'umiConfiguration',
+          'Configuration',
+          {
+            viewColumn: vscode.ViewColumn.Beside,
+            preserveFocus: false,
+          }
+        );
+        panel.webview.html = getConfigWebviewContent();
+      });
     });
   }
 
@@ -49,7 +80,7 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
 
   getChildren(element?: ConfigTreeItem): Thenable<ConfigTreeItem[]> {
     return Promise.resolve([
-      new ConfigTreeItem('Umi Config', vscode.TreeItemCollapsibleState.None, {
+      new ConfigTreeItem('umirc', vscode.TreeItemCollapsibleState.None, {
         command: 'extension.openUmiConfig',
         title: '',
       }),
