@@ -6,13 +6,11 @@ const path = require('path');
 
 export default class UmiUI {
   private _terminal: Terminal | undefined;
-  private _sock: Socket;
+  private _sock: Socket | undefined;
 
   constructor(
     private _context: ExtensionContext,
-  ) {
-    this._sock = new Socket('http://localhost:3001/umiui');
-  }
+  ) {}
 
   async validateUmiProject(projects: WorkspaceFolder[], depressError = true) {
     if (projects && projects.length > 0) {
@@ -86,6 +84,10 @@ export default class UmiUI {
       this._terminal = window.createTerminal('Umi UI');
       this._terminal.show();
       this._terminal.sendText('UMI_UI_BROWSER=none umi ui');
+    }
+
+    if (!this._sock) {
+      this._sock = new Socket('http://localhost:3001/umiui');
     }
 
     this._sock.fetch({

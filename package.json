@@ -11,7 +11,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.umiUI"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -33,7 +33,10 @@
 		"commands": [
 			{
 				"command": "extension.umiUI",
-				"title": "Umi UI: Start Umi in current workspace directory"
+				"title": "UmiUI: Start"
+			}, {
+				"command": "extension.openUmiConfig",
+				"title": "UmiUI: Config"
 			}
 		]
 	},

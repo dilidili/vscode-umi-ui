@@ -40,6 +40,13 @@ function getConfigWebviewContent() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuration</title>
+    <style>
+      iframe {
+        width: 90vw;
+        height: 98vh;
+        margin-top: 5px;
+      }
+    </style>
 </head>
 <body>
   <iframe src="https://umijs.org/zh/config/" />
@@ -62,7 +69,7 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
           'Configuration',
           {
             viewColumn: vscode.ViewColumn.Beside,
-            preserveFocus: false,
+            preserveFocus: true,
           }
         );
         panel.webview.html = getConfigWebviewContent();

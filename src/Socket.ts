@@ -22,7 +22,10 @@ export class Socket {
 
   send(message: Object | string) {
     this._batchSend.push(typeof message === 'string' ? message : JSON.stringify(message));
-    this.flush();
+
+    if (this._state === SocketState.Online) {
+      this.flush();
+    }
   }
 
   fetch(message: Object | string, responseType: string): Promise<string> {
