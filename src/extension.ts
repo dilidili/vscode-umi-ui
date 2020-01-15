@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
 import { ConfigProvider, } from './configExplorer';
+import { activate as activateVirtualDocument } from './TextDocumentProvider';
 import UmiUI from './UmiUI';
 
 export function activate(context: vscode.ExtensionContext) {
 	const umiUI = new UmiUI(context);
+
+	activateVirtualDocument(context);
 
 	// config
 	const configProvider = new ConfigProvider(context);

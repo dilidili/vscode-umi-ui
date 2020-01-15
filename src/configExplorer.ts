@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { runCommand } from './util';
+import { exec } from 'child_process';
 
 const configFiles = ['.umirc.ts', '.umirc.js', 'config/config.ts', 'config/config.js'];
 const ConfigDoc: {
@@ -75,6 +77,31 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
         panel.webview.html = getConfigWebviewContent();
       });
     });
+
+    vscode.commands.registerCommand('extension.inspectWebpackConfig', () => {
+      const globalState = this._context.globalState;
+
+      if (!globalState.get('cwd')) {
+        return;
+      }
+
+      const saveConfig = globalState.get('webpack.dev.config.js');
+      if (!saveConfig) {
+        exec(`APP_ROOT=${globalState.get('cwd')} umi inspect`, (err, stdout) => {
+          if (!err) {
+            globalState.update('webpack.dev.config.js', stdout);
+            this.openWebpackDevConfig();
+          }
+        });
+      } else {
+        this.openWebpackDevConfig();
+      }
+    });
+  }
+
+  private openWebpackDevConfig() {
+    const uri = vscode.Uri.parse('umiui:/webpack.dev.config.js');
+    vscode.window.showTextDocument(uri, { preview: true, });
   }
 
   refresh(): void {
@@ -86,12 +113,24 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
   }
 
   getChildren(element?: ConfigTreeItem): Thenable<ConfigTreeItem[]> {
-    return Promise.resolve([
-      new ConfigTreeItem('umirc', vscode.TreeItemCollapsibleState.None, {
-        command: 'extension.openUmiConfig',
-        title: '',
-      }),
-    ]);
+    if (!element) {
+      return Promise.resolve([
+        new ConfigTreeItem('umirc', vscode.TreeItemCollapsibleState.None, {
+          command: 'extension.openUmiConfig',
+          title: '',
+        }),
+        new ConfigTreeItem('webpack config', vscode.TreeItemCollapsibleState.Expanded),
+      ]);
+    } else if (element.label === 'webpack config') {
+      return Promise.resolve([
+        new ConfigTreeItem('dev', vscode.TreeItemCollapsibleState.None, {
+          command: 'extension.inspectWebpackConfig',
+          title: '',
+        }),
+      ]);
+    } else {
+      return Promise.resolve([]);
+    }
   }
 }
 
