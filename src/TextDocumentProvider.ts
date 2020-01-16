@@ -7,6 +7,11 @@ const MyProvider = class implements vscode.TextDocumentContentProvider {
     if (uri.path === '/webpack.dev.config.js') {
       return this._context.globalState.get('webpack.dev.config.js') || '';
     }
+
+    if (uri.path === '/webpack.prod.config.js') {
+      return this._context.globalState.get('webpack.prod.config.js') || '';
+    }
+
     return '';
   }
 };

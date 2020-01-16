@@ -37,8 +37,26 @@
 			}, {
 				"command": "extension.openUmiConfig",
 				"title": "UmiUI: Config"
+			}, {
+				"command": "extension.inspectWebpackConfig",
+				"title": "UmiUI: Inspect Webpack Config",
+				"icon": {
+					"light": "media/light/refresh.svg",
+					"dark": "media/dark/refresh.svg"
+				}
 			}
-		]
+		],
+		"menus": {
+			"view/item/context": [{
+				"command": "extension.inspectWebpackConfig",
+				"when": "viewItem == webpackDevConfig",
+				"group": "inline"
+			}, {
+				"command": "extension.inspectWebpackConfig",
+				"when": "viewItem == webpackProdConfig",
+				"group": "inline"
+			}]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "yarn run compile",

@@ -78,29 +78,44 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
       });
     });
 
-    vscode.commands.registerCommand('extension.inspectWebpackConfig', () => {
+    vscode.commands.registerCommand('extension.inspectWebpackConfig', (mode: (string | { command?: { arguments: [string, boolean] } }) = "dev", refresh = false) => {
       const globalState = this._context.globalState;
 
       if (!globalState.get('cwd')) {
         return;
       }
 
-      const saveConfig = globalState.get('webpack.dev.config.js');
+      // TODO: specify arguments from manifest.
+      if (typeof mode !== 'string' && mode.command?.arguments) {
+        [mode, refresh] = mode.command?.arguments;
+        refresh = true;
+      }
+
+      const storageKey = `webpack.${mode}.config.js`;
+      if (refresh) globalState.update(storageKey, undefined);
+
+      const saveConfig = globalState.get(storageKey);
       if (!saveConfig) {
-        exec(`APP_ROOT=${globalState.get('cwd')} umi inspect`, (err, stdout) => {
-          if (!err) {
-            globalState.update('webpack.dev.config.js', stdout);
-            this.openWebpackDevConfig();
-          }
-        });
+        vscode.window.setStatusBarMessage('Loading webpack config...', new Promise((c, e) => {
+          exec(`APP_ROOT=${globalState.get('cwd')} umi inspect ${mode === 'prod' ? '--mode production' : ''}`, (err, stdout) => {
+            if (!err) {
+              globalState.update(storageKey, stdout);
+              this.openWebpackConfig(storageKey);
+
+              c();
+            } else {
+              e();
+            }
+          });
+        }));
       } else {
-        this.openWebpackDevConfig();
+        this.openWebpackConfig(storageKey);
       }
     });
   }
 
-  private openWebpackDevConfig() {
-    const uri = vscode.Uri.parse('umiui:/webpack.dev.config.js');
+  private openWebpackConfig(storageKey: string) {
+    const uri = vscode.Uri.parse(`umiui:/${storageKey}`);
     vscode.window.showTextDocument(uri, { preview: true, });
   }
 
@@ -126,7 +141,14 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
         new ConfigTreeItem('dev', vscode.TreeItemCollapsibleState.None, {
           command: 'extension.inspectWebpackConfig',
           title: '',
-        }),
+          arguments: ['dev', false],
+        }, 'webpackDevConfig'),
+
+        new ConfigTreeItem('prod', vscode.TreeItemCollapsibleState.None, {
+          command: 'extension.inspectWebpackConfig',
+          title: '',
+          arguments: ['prod', false],
+        }, 'webpackProdConfig')
       ]);
     } else {
       return Promise.resolve([]);
@@ -138,8 +160,9 @@ export class ConfigTreeItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly command?: vscode.Command
+    public readonly command?: vscode.Command,
+    public readonly contextValue?: string
   ) {
-    super(label);
+    super(label, collapsibleState);
   }
 }
