@@ -16,14 +16,20 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"viewsContainers": {
-			"activitybar": [{
-				"id": "umi-ui",
-				"title": "Umi UI",
-				"icon": "media/rice.svg"
-			}]
+			"activitybar": [
+				{
+					"id": "umi-ui",
+					"title": "Umi UI",
+					"icon": "media/rice.svg"
+				}
+			]
 		},
 		"views": {
 			"umi-ui": [
+				{
+					"id": "route",
+					"name": "Route"
+				},
 				{
 					"id": "config",
 					"name": "Config"
@@ -34,10 +40,12 @@
 			{
 				"command": "extension.umiUI",
 				"title": "UmiUI: Start"
-			}, {
+			},
+			{
 				"command": "extension.openUmiConfig",
 				"title": "UmiUI: Config"
-			}, {
+			},
+			{
 				"command": "extension.inspectWebpackConfig",
 				"title": "UmiUI: Inspect Webpack Config",
 				"icon": {
@@ -47,15 +55,18 @@
 			}
 		],
 		"menus": {
-			"view/item/context": [{
-				"command": "extension.inspectWebpackConfig",
-				"when": "viewItem == webpackDevConfig",
-				"group": "inline"
-			}, {
-				"command": "extension.inspectWebpackConfig",
-				"when": "viewItem == webpackProdConfig",
-				"group": "inline"
-			}]
+			"view/item/context": [
+				{
+					"command": "extension.inspectWebpackConfig",
+					"when": "viewItem == webpackDevConfig",
+					"group": "inline"
+				},
+				{
+					"command": "extension.inspectWebpackConfig",
+					"when": "viewItem == webpackProdConfig",
+					"group": "inline"
+				}
+			]
 		}
 	},
 	"scripts": {
@@ -78,6 +89,7 @@
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
+		"resolve-from": "^5.0.0",
 		"sockjs-client": "^1.4.0"
 	}
 }

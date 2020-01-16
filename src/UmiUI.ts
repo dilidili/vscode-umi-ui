@@ -1,5 +1,10 @@
 import { Terminal, ExtensionContext, window, workspace, commands, WorkspaceFolder } from 'vscode';
 import { Socket } from './Socket';
+import { Service } from './Service';
+import { getConfigFile } from './config';
+
+// if not, will throw init cache file error when create umi server
+process.env['BABEL_DISABLE_CACHE'] = "true";
 
 const { readFileSync } = require('fs');
 const path = require('path');
@@ -7,10 +12,15 @@ const path = require('path');
 export default class UmiUI {
   private _terminal: Terminal | undefined;
   private _sock: Socket | undefined;
+  public service: Service | undefined;
 
   constructor(
     private _context: ExtensionContext,
-  ) {}
+  ) {
+    if (typeof _context.globalState.get('cwd') === 'string') {
+      this.service = new Service(_context.globalState.get('cwd') as string);
+    }
+  }
 
   async validateUmiProject(projects: WorkspaceFolder[], depressError = true) {
     if (projects && projects.length > 0) {
@@ -18,11 +28,9 @@ export default class UmiUI {
         const project = projects[i];
 
         try {
-          const pkg = readFileSync(await project.uri.with({ path: path.join(project.uri.fsPath, 'package.json') }).fsPath);
-          const pkgJSON = JSON.parse(pkg);
-          const containUmi = Object.keys({ ...(pkgJSON.dependencies || {}), ...(pkgJSON.devDependencies || {}) }).indexOf('umi') >= 0;
+          const isUmiProject = getConfigFile(project.uri.fsPath);
 
-          if (containUmi) {
+          if (isUmiProject) {
             return Promise.resolve(project);
           }
         } catch (err) {

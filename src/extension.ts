@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { ConfigProvider, } from './configExplorer';
+import { ConfigProvider, } from './ConfigExplorer';
+import { RouteProvider } from './route/RouteProvider';
 import { activate as activateVirtualDocument } from './TextDocumentProvider';
 import UmiUI from './UmiUI';
 
@@ -11,6 +12,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// config
 	const configProvider = new ConfigProvider(context);
 	vscode.window.registerTreeDataProvider('config', configProvider);
+
+	// route
+	const routeProvider = new RouteProvider(context, umiUI);
+	vscode.window.registerTreeDataProvider('route', routeProvider);
 
 	let disposable = vscode.commands.registerCommand('extension.umiUI', async () => {
 		await umiUI.start();

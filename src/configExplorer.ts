@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { runCommand } from './util';
+import { configFiles, getConfigFile } from './config';
 import { exec } from 'child_process';
 
-const configFiles = ['.umirc.ts', '.umirc.js', 'config/config.ts', 'config/config.js'];
 const ConfigDoc: {
   [key: string]: any,
 // @ts-ignore
@@ -24,16 +23,6 @@ vscode.languages.registerHoverProvider({
     }
   }
 });
-
-export function getConfigFile(cwd: string): string {
-  const validFiles = configFiles.filter(f => fs.existsSync(path.join(cwd, f)));
-
-  if (validFiles[0]) {
-    return path.join(cwd, validFiles[0]);
-  }
-
-  return '';
-}
 
 function getConfigWebviewContent() {
   return `<!DOCTYPE html>
