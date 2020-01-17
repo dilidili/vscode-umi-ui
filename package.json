@@ -60,6 +60,14 @@
 					"light": "media/light/refresh.svg",
 					"dark": "media/dark/refresh.svg"
 				}
+			},
+			{
+				"command": "extension.removeRoute",
+				"title": "Umi UI: Delete Selected Route",
+				"icon": {
+					"light": "media/light/remove.svg",
+					"dark": "media/dark/remove.svg"
+				}
 			}
 		],
 		"menus": {
@@ -72,6 +80,11 @@
 				{
 					"command": "extension.inspectWebpackConfig",
 					"when": "viewItem == webpackProdConfig",
+					"group": "inline"
+				},
+				{
+					"command": "extension.removeRoute",
+					"when": "viewItem == routeTreeItem",
 					"group": "inline"
 				}
 			],
