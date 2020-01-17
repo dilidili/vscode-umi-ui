@@ -19,7 +19,7 @@
 			"activitybar": [
 				{
 					"id": "umi-ui",
-					"title": "Umi UI",
+					"title": "UmiUI",
 					"icon": "media/rice.svg"
 				}
 			]
@@ -52,6 +52,14 @@
 					"light": "media/light/refresh.svg",
 					"dark": "media/dark/refresh.svg"
 				}
+			},
+			{
+				"command": "extension.refreshRoutes",
+				"title": "Umi UI: Refresh Routes",
+				"icon": {
+					"light": "media/light/refresh.svg",
+					"dark": "media/dark/refresh.svg"
+				}
 			}
 		],
 		"menus": {
@@ -66,7 +74,12 @@
 					"when": "viewItem == webpackProdConfig",
 					"group": "inline"
 				}
-			]
+			],
+			"view/title": [{
+				"command": "extension.refreshRoutes",
+				"when": "view == route",
+				"group": "navigation"
+			}]
 		}
 	},
 	"scripts": {
