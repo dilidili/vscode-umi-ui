@@ -1,9 +1,12 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as resolveFrom from 'resolve-from';
 import { Route } from '../Service';
 import UmiUI from '../UmiUI';
 import { getConfigFile } from '../config';
+import { removeRoutePlugin } from './babelPlugin';
+import { fstat } from 'fs';
 
 export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<RouteTreeItem | undefined> = new vscode.EventEmitter<RouteTreeItem | undefined>();
@@ -26,22 +29,32 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
       this._umiUI.service?.refreshRoutes();
     });
 
-    vscode.commands.registerCommand('extension.removeRoute', () => {
+    vscode.commands.registerCommand('extension.removeRoute', (item) => {
       const cwd = this._context.globalState.get('cwd') as string;
       if (cwd) {
         const configFilePath = getConfigFile(cwd);
         const babelPath = resolveFrom.silent(cwd, '@babel/core');
-        const babelPresetUmiPath = resolveFrom.silent(cwd, 'babel-preset-umi');
-        const babelPresetTypescriptPath = resolveFrom.silent(cwd, '@babel/preset-typescript');
+        const babelPresetTypescriptPath = resolveFrom.silent(cwd, '@babel/plugin-syntax-typescript');
 
         if (babelPath) {
-          const { ast } = require(babelPath).transformFileSync(configFilePath, {
-            presets: [
-              babelPresetTypescriptPath,
-              babelPresetUmiPath,
-            ],
+          const babel = require(babelPath);
+          const { ast, code } = require(babelPath).transformFileSync(configFilePath, {
+            plugins: [babelPresetTypescriptPath, removeRoutePlugin(item)],
             ast: true
           });
+
+          const { code: newCode } = babel.transformFromAstSync(ast, code, {
+            filename: 'file.ts',
+            plugins: [
+              babelPresetTypescriptPath,
+            ]
+          });
+
+          if (code) {
+            fs.writeFileSync(configFilePath, code, {
+              encoding: 'utf8',
+            });
+          }
         }
       }
     });
@@ -59,7 +72,7 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
   getChildren(element?: RouteTreeItem | undefined): vscode.ProviderResult<RouteTreeItem[]> {
     if (!element) {
       const routes = this._umiUI.service?.routes || [];
-      return Promise.resolve(routes.map(route => new RouteTreeItem(route)));
+      return Promise.resolve(routes.map((route, index) => new RouteTreeItem(route, '' + index)));
     } else {
       return element.getChildren();
     }
@@ -71,6 +84,7 @@ export class RouteTreeItem extends vscode.TreeItem {
 
   constructor(
     public readonly route: Route,
+    public readonly keyPath: string,
   ) {
     super(
       route.redirect ? `${route.path} -> ${route.redirect}` : route.path || '*',
@@ -87,7 +101,7 @@ export class RouteTreeItem extends vscode.TreeItem {
   }
 
   getChildren() {
-    const children = this.route.routes ? this.route.routes.map(route => new RouteTreeItem(route)) : [];
+    const children = this.route.routes ? this.route.routes.map((route, index) => new RouteTreeItem(route, this.keyPath + '.' + index)) : [];
     return Promise.resolve(children);
   }
 }
