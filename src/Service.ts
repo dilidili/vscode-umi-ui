@@ -1,5 +1,8 @@
 import * as resolveFrom from 'resolve-from';
+import * as fs from 'fs';
+import * as vscode from 'vscode';
 import { EventEmitter } from 'vscode';
+import { getConfigFile } from './config';
 
 export type Route = {
   component: string;
@@ -22,8 +25,16 @@ export class Service {
     this._service.init();
 
     this.routeChangeEvent = new EventEmitter<void>();
+    this.initRouteChangeEvent();
 
     this.routes = this._service.getRoutes();
+  }
+
+  initRouteChangeEvent() {
+    const configFilePath = getConfigFile(this.cwd);
+    fs.watchFile(configFilePath, { interval: 1500 }, () => {
+      this.refreshRoutes();
+    });
   }
 
   refreshRoutes() {
@@ -31,7 +42,7 @@ export class Service {
     this.routeChangeEvent.fire();
   }
 
-  getService = (cwd: string) => {
+  private getService = (cwd: string) => {
     const serviceModule = 'umi/_Service.js';
     const servicePath = resolveFrom.silent(cwd, serviceModule) || 'umi-build-dev/lib/Service';
     const Service = require(servicePath).default;

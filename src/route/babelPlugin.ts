@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { SourceLocation } from './RouteProvider';
 
-export const removeRoutePlugin = (item) => {
+export const removeRoutePlugin = (item, setRemoveSourceLocation: (SourceLocation) => void) => {
   return ({ types }) => {
     return {
       visitor: {
@@ -15,7 +16,9 @@ export const removeRoutePlugin = (item) => {
               return r.get(`value.elements.${v}`);
             }, routesProperty);
 
-            targetRoute.remove()
+            if (targetRoute) {
+              setRemoveSourceLocation(targetRoute.node.loc);
+            }
           } catch (err) {
             console.log(err);
           }

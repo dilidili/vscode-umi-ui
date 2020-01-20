@@ -8,6 +8,17 @@ import { getConfigFile } from '../config';
 import { removeRoutePlugin } from './babelPlugin';
 import { fstat } from 'fs';
 
+export type SourceLocation = {
+  end: {
+    column: number;
+    line: number;
+  },
+  start: {
+    column: number;
+    line: number;
+  }
+}
+
 export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<RouteTreeItem | undefined> = new vscode.EventEmitter<RouteTreeItem | undefined>();
   readonly onDidChangeTreeData: vscode.Event<RouteTreeItem | undefined> = this._onDidChangeTreeData.event;
@@ -16,6 +27,7 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
     private _context: vscode.ExtensionContext,
     private _umiUI: UmiUI,
   ) {
+    // open component file correspond to a route
     vscode.commands.registerCommand('extension.openRouteComponentDocument', (componentPath: string) => {
       componentPath = path.join(_context.globalState.get('cwd') || '', componentPath);
       componentPath = require.resolve(componentPath);
@@ -25,10 +37,12 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
       }
     });
 
+    // refresh route config
     vscode.commands.registerCommand('extension.refreshRoutes', () => {
       this._umiUI.service?.refreshRoutes();
     });
 
+    // remove route config
     vscode.commands.registerCommand('extension.removeRoute', (item) => {
       const cwd = this._context.globalState.get('cwd') as string;
       if (cwd) {
@@ -38,21 +52,43 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
 
         if (babelPath) {
           const babel = require(babelPath);
-          const { ast, code } = require(babelPath).transformFileSync(configFilePath, {
-            plugins: [babelPresetTypescriptPath, removeRoutePlugin(item)],
+          let removeLoc: SourceLocation | null = null;
+          require(babelPath).transformFileSync(configFilePath, {
+            plugins: [babelPresetTypescriptPath, removeRoutePlugin(item, (loc) => {
+              removeLoc = loc;
+            })],
             ast: true
           });
 
-          const { code: newCode } = babel.transformFromAstSync(ast, code, {
-            filename: 'file.ts',
-            plugins: [
-              babelPresetTypescriptPath,
-            ]
-          });
+          if (!!removeLoc) {
+            const remove = removeLoc as SourceLocation;
 
-          if (code) {
-            fs.writeFileSync(configFilePath, code, {
-              encoding: 'utf8',
+            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath)).then(() => {
+              const editor = vscode.window.activeTextEditor;
+
+              if (editor) {
+                const document = editor.document;
+
+                editor.edit(editBuilder => {
+                  // remove leading space
+                  while(remove.start.column > 0 && document.getText(new vscode.Range(remove.start.line - 1, remove.start.column - 1, remove.start.line - 1, remove.start.column)) === ' ') {
+                    remove.start.column -= 1;
+                  }
+
+                  // remove trailing comma and break line
+                  while(
+                    document.getText(new vscode.Range(remove.end.line - 1, remove.end.column, remove.end.line - 1, remove.end.column + 1)) === ',' || (
+                      remove.start.column === 0 ? (
+                        document.getText(new vscode.Range(remove.end.line - 1, remove.end.column, remove.end.line - 1, remove.end.column + 1)) === '\n'
+                      ) : false
+                    )
+                  ) {
+                    remove.end.column += 1;
+                  }
+
+                  editBuilder.delete(new vscode.Range(remove.start.line - 1, remove.start.column, remove.end.line - 1, remove.end.column));
+                }).then(() => document.save())
+              }
             });
           }
         }
