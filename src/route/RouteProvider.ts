@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as resolveFrom from 'resolve-from';
+import { babelRecast } from './babelPlugin';
 import { Route } from '../Service';
 import UmiUI from '../UmiUI';
 import { getConfigFile } from '../config';
-import { removeRoutePlugin } from './babelPlugin';
+import { removeRoutePlugin, addRoutePlugin } from './babelPlugin';
 import { fstat } from 'fs';
 
 export type SourceLocation = {
@@ -42,56 +42,46 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
       this._umiUI.service?.refreshRoutes();
     });
 
+    // add route config
+    vscode.commands.registerCommand('extension.addRoute', (item) => {
+      const cwd = this._context.globalState.get('cwd') as string;
+
+      if (cwd) {
+        const configFilePath = getConfigFile(cwd);
+
+        fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
+          if (!err) {
+            const newContent = await babelRecast(content, {
+              plugins: [require.resolve('@babel/plugin-syntax-typescript')],
+            }, {
+              plugins: [require.resolve('@babel/plugin-syntax-typescript'), addRoutePlugin(item)],
+            });
+
+            await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath));
+            fs.writeFile(configFilePath, newContent, () => {});
+          }
+        });
+      }
+    })
+
     // remove route config
     vscode.commands.registerCommand('extension.removeRoute', (item) => {
       const cwd = this._context.globalState.get('cwd') as string;
       if (cwd) {
         const configFilePath = getConfigFile(cwd);
-        const babelPath = resolveFrom.silent(cwd, '@babel/core');
-        const babelPresetTypescriptPath = resolveFrom.silent(cwd, '@babel/plugin-syntax-typescript');
 
-        if (babelPath) {
-          const babel = require(babelPath);
-          let removeLoc: SourceLocation | null = null;
-          require(babelPath).transformFileSync(configFilePath, {
-            plugins: [babelPresetTypescriptPath, removeRoutePlugin(item, (loc) => {
-              removeLoc = loc;
-            })],
-            ast: true
-          });
-
-          if (!!removeLoc) {
-            const remove = removeLoc as SourceLocation;
-
-            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath)).then(() => {
-              const editor = vscode.window.activeTextEditor;
-
-              if (editor) {
-                const document = editor.document;
-
-                editor.edit(editBuilder => {
-                  // remove leading space
-                  while(remove.start.column > 0 && document.getText(new vscode.Range(remove.start.line - 1, remove.start.column - 1, remove.start.line - 1, remove.start.column)) === ' ') {
-                    remove.start.column -= 1;
-                  }
-
-                  // remove trailing comma and break line
-                  while(
-                    document.getText(new vscode.Range(remove.end.line - 1, remove.end.column, remove.end.line - 1, remove.end.column + 1)) === ',' || (
-                      remove.start.column === 0 ? (
-                        document.getText(new vscode.Range(remove.end.line - 1, remove.end.column, remove.end.line - 1, remove.end.column + 1)) === '\n'
-                      ) : false
-                    )
-                  ) {
-                    remove.end.column += 1;
-                  }
-
-                  editBuilder.delete(new vscode.Range(remove.start.line - 1, remove.start.column, remove.end.line - 1, remove.end.column));
-                }).then(() => document.save())
-              }
+        fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
+          if (!err) {
+            const newContent = await babelRecast(content, {
+              plugins: [require.resolve('@babel/plugin-syntax-typescript')],
+            }, {
+              plugins: [require.resolve('@babel/plugin-syntax-typescript'), removeRoutePlugin(item)],
             });
+
+            await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath));
+            fs.writeFile(configFilePath, newContent, () => {});
           }
-        }
+        });
       }
     });
 
@@ -99,7 +89,6 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
       this._onDidChangeTreeData.fire();
     });
   }
-
 
   getTreeItem(element: RouteTreeItem): vscode.TreeItem {
     return element;

@@ -32,7 +32,7 @@ export class Service {
 
   initRouteChangeEvent() {
     const configFilePath = getConfigFile(this.cwd);
-    fs.watchFile(configFilePath, { interval: 1500 }, () => {
+    fs.watchFile(configFilePath, { interval: 1000 }, () => {
       this.refreshRoutes();
     });
   }

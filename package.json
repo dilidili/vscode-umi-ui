@@ -68,6 +68,14 @@
 					"light": "media/light/remove.svg",
 					"dark": "media/dark/remove.svg"
 				}
+			},
+			{
+				"command": "extension.addRoute",
+				"title": "Umi UI: Add Route in Selected Route",
+				"icon": {
+					"light": "media/light/add.svg",
+					"dark": "media/dark/add.svg"
+				}
 			}
 		],
 		"menus": {
@@ -86,13 +94,20 @@
 					"command": "extension.removeRoute",
 					"when": "viewItem == routeTreeItem",
 					"group": "inline"
+				},
+				{
+					"command": "extension.addRoute",
+					"when": "viewItem == routeTreeItem",
+					"group": "inline"
 				}
 			],
-			"view/title": [{
-				"command": "extension.refreshRoutes",
-				"when": "view == route",
-				"group": "navigation"
-			}]
+			"view/title": [
+				{
+					"command": "extension.refreshRoutes",
+					"when": "view == route",
+					"group": "navigation"
+				}
+			]
 		}
 	},
 	"scripts": {
@@ -115,6 +130,9 @@
 		"vscode-test": "^1.2.2"
 	},
 	"dependencies": {
+		"@babel/core": "^7.8.3",
+		"@babel/plugin-syntax-typescript": "^7.8.3",
+		"recast": "^0.18.5",
 		"resolve-from": "^5.0.0",
 		"sockjs-client": "^1.4.0"
 	}
