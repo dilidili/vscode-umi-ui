@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ConfigProvider, } from './ConfigExplorer';
+import { ConfigProvider, } from './configExplorer';
 import { RouteProvider } from './route/RouteProvider';
 import { activate as activateVirtualDocument } from './TextDocumentProvider';
 import UmiUI from './UmiUI';

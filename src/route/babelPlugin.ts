@@ -16,13 +16,14 @@ export async function babelRecast(code: string, parserOpts, transformerOpts) {
   const ast = recast.parse(code, {
     parser: {
       parse: source => babel.parse(source, { ...parserOpts }),
-    }
+    },
+    reuseWhitespace: false,
   });
 
   const opts = Object.assign(
     {
       ast: true,
-      code: false
+      code: false,
     },
     transformerOpts,
     {

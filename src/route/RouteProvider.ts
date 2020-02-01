@@ -6,7 +6,6 @@ import { Route } from '../Service';
 import UmiUI from '../UmiUI';
 import { getConfigFile } from '../config';
 import { removeRoutePlugin, addRoutePlugin } from './babelPlugin';
-import { fstat } from 'fs';
 
 export type SourceLocation = {
   end: {
@@ -17,6 +16,22 @@ export type SourceLocation = {
     column: number;
     line: number;
   }
+}
+
+const findDiffStart = (content: string, newContent: string): number => {
+  const contentLines = content.split('\n');
+  const newContentLines = newContent.split('\n');
+  let i = 0;
+
+  while(i < contentLines.length && i< newContentLines.length) {
+    if (contentLines[i] !== newContentLines[i]) {
+      return i;
+    } else {
+      i++;
+    }
+  }
+
+  return 0;
 }
 
 export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
@@ -57,8 +72,16 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
               plugins: [require.resolve('@babel/plugin-syntax-typescript'), addRoutePlugin(item)],
             });
 
-            await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath));
-            fs.writeFile(configFilePath, newContent, () => {});
+            // find cursor position
+            let diffStart = findDiffStart(content, newContent);
+
+            fs.writeFile(configFilePath, newContent, () => {
+              this._umiUI.service?.refreshRoutes();
+
+              vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath), {
+                selection: new vscode.Selection(new vscode.Position(diffStart, 0), new vscode.Position(diffStart, 0)),
+              });
+            });
           }
         });
       }
@@ -78,8 +101,15 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
               plugins: [require.resolve('@babel/plugin-syntax-typescript'), removeRoutePlugin(item)],
             });
 
-            await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath));
-            fs.writeFile(configFilePath, newContent, () => {});
+            let diffStart = findDiffStart(content, newContent);
+
+            fs.writeFile(configFilePath, newContent, () => {
+              this._umiUI.service?.refreshRoutes();
+
+              vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath), {
+                selection: new vscode.Selection(new vscode.Position(diffStart, 0), new vscode.Position(diffStart, 0)),
+              });
+            });
           }
         });
       }
