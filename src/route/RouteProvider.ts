@@ -65,7 +65,15 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
         const configFilePath = getConfigFile(cwd);
 
         fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
-          if (!err) {
+          let config: {
+            [key: string]: any;
+          } = {};
+          try {
+            config = JSON.parse(content);
+          } catch(err) {};
+
+          // get routes from config
+          if (!err && config.routes) {
             const newContent = await babelRecast(content, {
               plugins: [require.resolve('@babel/plugin-syntax-typescript')],
             }, {
@@ -82,6 +90,14 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
                 selection: new vscode.Selection(new vscode.Position(diffStart, 0), new vscode.Position(diffStart, 0)),
               });
             });
+          } else {
+            // get routes from directory
+            const route = item.route;
+            const newRouteFilePath = path.join(cwd, path.dirname(route.component), `Untitled${path.extname(route.component) || '.tsx'}`);
+            fs.writeFileSync(newRouteFilePath, '');
+            this._umiUI.service?.refreshRoutes();
+
+            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(newRouteFilePath));
           }
         });
       }
@@ -94,7 +110,15 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
         const configFilePath = getConfigFile(cwd);
 
         fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
-          if (!err) {
+          let config: {
+            [key: string]: any;
+          } = {};
+          try {
+            config = JSON.parse(content);
+          } catch(err) {};
+
+          // get routes from config
+          if (!err && config.routes) {
             const newContent = await babelRecast(content, {
               plugins: [require.resolve('@babel/plugin-syntax-typescript')],
             }, {
@@ -109,6 +133,15 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
               vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(configFilePath), {
                 selection: new vscode.Selection(new vscode.Position(diffStart, 0), new vscode.Position(diffStart, 0)),
               });
+            });
+          } else {
+            // get routes from directory 
+            const route = item.route;
+            const routePath = path.join(cwd, route.component);
+            fs.unlink(routePath, (err) => {
+              if (!err) {
+                this._umiUI.service?.refreshRoutes();
+              }
             });
           }
         });
