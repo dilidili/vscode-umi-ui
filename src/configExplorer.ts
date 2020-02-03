@@ -24,27 +24,6 @@ vscode.languages.registerHoverProvider({
   }
 });
 
-function getConfigWebviewContent() {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuration</title>
-    <style>
-      iframe {
-        width: 90vw;
-        height: 98vh;
-        margin-top: 5px;
-      }
-    </style>
-</head>
-<body>
-  <iframe src="https://umijs.org/zh/config/" />
-</body>
-</html>`;
-}
-
 export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
 
   private _onDidChangeTreeData: vscode.EventEmitter<ConfigTreeItem | undefined> = new vscode.EventEmitter<ConfigTreeItem | undefined>();
@@ -54,17 +33,7 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
     private _context: vscode.ExtensionContext,
   ) {
     vscode.commands.registerCommand('extension.openUmiConfig', () => {
-      vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(getConfigFile(_context.globalState.get('cwd') || ''))).then(() => {
-        const panel = vscode.window.createWebviewPanel(
-          'umiConfiguration',
-          'Configuration',
-          {
-            viewColumn: vscode.ViewColumn.Beside,
-            preserveFocus: true,
-          }
-        );
-        panel.webview.html = getConfigWebviewContent();
-      });
+      vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(getConfigFile(_context.globalState.get('cwd') || '')));
     });
 
     vscode.commands.registerCommand('extension.inspectWebpackConfig', (mode: (string | { command?: { arguments: [string, boolean] } }) = "dev", refresh = false) => {
