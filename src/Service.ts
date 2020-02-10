@@ -13,7 +13,7 @@ export type Route = {
 };
 
 export class Service {
-  private _service: any;
+  public _service: any;
 
   public routeChangeEvent: EventEmitter<void>;
   public routes: Route[] = [];

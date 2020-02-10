@@ -7,10 +7,10 @@ import UmiUI from './UmiUI';
 export function activate(context: vscode.ExtensionContext) {
 	const umiUI = new UmiUI(context);
 
-	activateVirtualDocument(context);
+	activateVirtualDocument(context, umiUI);
 
 	// config
-	const configProvider = new ConfigProvider(context);
+	const configProvider = new ConfigProvider(context, umiUI);
 	vscode.window.registerTreeDataProvider('config', configProvider);
 
 	// route

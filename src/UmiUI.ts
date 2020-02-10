@@ -1,18 +1,17 @@
-import { Terminal, ExtensionContext, window, workspace, commands, WorkspaceFolder } from 'vscode';
+import { Terminal, ExtensionContext, window, workspace, WorkspaceFolder, } from 'vscode';
 import { Socket } from './Socket';
 import { Service } from './Service';
 import { getConfigFile } from './config';
+import { UmiUITextDocumentContentProvider } from './TextDocumentProvider';
 
 // if not, will throw init cache file error when create umi server
 process.env['BABEL_DISABLE_CACHE'] = "true";
-
-const { readFileSync } = require('fs');
-const path = require('path');
 
 export default class UmiUI {
   private _terminal: Terminal | undefined;
   private _sock: Socket | undefined;
   public service: Service | undefined;
+  public TDCprovider: UmiUITextDocumentContentProvider | undefined;
 
   constructor(
     private _context: ExtensionContext,

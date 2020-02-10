@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
+import UmiUI from "./UmiUI";
 
-const MyProvider = class implements vscode.TextDocumentContentProvider {
+export class UmiUITextDocumentContentProvider implements vscode.TextDocumentContentProvider {
+  // emitter and its event
+  public onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+  public onDidChange = this.onDidChangeEmitter.event;
+
   constructor(private _context: vscode.ExtensionContext) {}
 
   provideTextDocumentContent(uri: vscode.Uri): string {
@@ -16,6 +21,9 @@ const MyProvider = class implements vscode.TextDocumentContentProvider {
   }
 };
 
-export const activate = (context: vscode.ExtensionContext) => {
-  vscode.workspace.registerTextDocumentContentProvider('umiui', new MyProvider(context));
+export const activate = (context: vscode.ExtensionContext, umiui: UmiUI) => {
+  const TDCprovider = new UmiUITextDocumentContentProvider(context);
+  vscode.workspace.registerTextDocumentContentProvider('umiui', TDCprovider);
+
+  umiui.TDCprovider = TDCprovider;
 };

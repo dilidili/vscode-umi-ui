@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { configFiles, getConfigFile } from './config';
 import { exec } from 'child_process';
+import UmiUI from './UmiUI';
 
 const ConfigDoc: {
   [key: string]: any,
@@ -31,6 +32,7 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
 
   constructor(
     private _context: vscode.ExtensionContext,
+    private _umiUI: UmiUI,
   ) {
     vscode.commands.registerCommand('extension.openUmiConfig', () => {
       vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(getConfigFile(_context.globalState.get('cwd') || '')));
@@ -50,30 +52,37 @@ export class ConfigProvider implements vscode.TreeDataProvider<ConfigTreeItem> {
       }
 
       const storageKey = `webpack.${mode}.config.js`;
-      if (refresh) globalState.update(storageKey, undefined);
+      if (refresh) {
+        globalState.update(storageKey, undefined);
+      };
 
       const saveConfig = globalState.get(storageKey);
       if (!saveConfig) {
         vscode.window.setStatusBarMessage('Loading webpack config...', new Promise((c, e) => {
-          exec(`APP_ROOT=${globalState.get('cwd')} umi inspect ${mode === 'prod' ? '--mode production' : ''}`, (err, stdout) => {
-            if (!err) {
-              globalState.update(storageKey, stdout);
-              this.openWebpackConfig(storageKey);
+          if (mode === 'prod') {
+            process.env.NODE_ENV = 'production';
+          } else {
+            process.env.NODE_ENV = 'development';
+          }
 
-              c();
-            } else {
-              e();
-            }
-          });
+          this._umiUI.service?._service.runCommand('inspect');
+
+          const webpackConfig = this._umiUI.service?._service.webpackConfig;
+          globalState.update(storageKey, JSON.stringify(webpackConfig, null, 2));
+          this.openWebpackConfig(storageKey, refresh);
+          c();
         }));
       } else {
-        this.openWebpackConfig(storageKey);
+        this.openWebpackConfig(storageKey, refresh);
       }
     });
   }
 
-  private openWebpackConfig(storageKey: string) {
+  private openWebpackConfig(storageKey: string, refresh: boolean) {
     const uri = vscode.Uri.parse(`umiui:/${storageKey}`);
+    if (refresh) {
+      this._umiUI.TDCprovider?.onDidChangeEmitter.fire(uri);
+    }
     vscode.window.showTextDocument(uri, { preview: true, });
   }
 
