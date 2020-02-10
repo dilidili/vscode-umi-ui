@@ -14,8 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerTreeDataProvider('config', configProvider);
 
 	// route
-	const routeProvider = new RouteProvider(context, umiUI);
-	vscode.window.registerTreeDataProvider('route', routeProvider);
+	new RouteProvider(context, umiUI);
 
 	let disposable = vscode.commands.registerCommand('extension.umiUI', async () => {
 		await umiUI.start();

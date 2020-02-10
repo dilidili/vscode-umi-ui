@@ -30,6 +30,10 @@ export class Service {
     this.routes = this._service.getRoutes();
   }
 
+  getConfig() {
+    return this._service.config;
+  }
+
   initRouteChangeEvent() {
     const configFilePath = getConfigFile(this.cwd);
     fs.watchFile(configFilePath, { interval: 1000 }, () => {

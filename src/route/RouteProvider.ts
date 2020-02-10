@@ -37,13 +37,17 @@ const findDiffStart = (content: string, newContent: string): number => {
 export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<RouteTreeItem | undefined> = new vscode.EventEmitter<RouteTreeItem | undefined>();
   readonly onDidChangeTreeData: vscode.Event<RouteTreeItem | undefined> = this._onDidChangeTreeData.event;
+  private _routeViewer: vscode.TreeView<RouteTreeItem>; 
 
   constructor(
     private _context: vscode.ExtensionContext,
     private _umiUI: UmiUI,
   ) {
+    this._routeViewer = vscode.window.createTreeView('route', { treeDataProvider: this });
+
     // open component file correspond to a route
-    vscode.commands.registerCommand('extension.openRouteComponentDocument', (componentPath: string) => {
+    vscode.commands.registerCommand('extension.openRouteComponentDocument', (routeTreeItem: RouteTreeItem) => {
+      let componentPath = routeTreeItem.route.component;
       componentPath = path.join(_context.globalState.get('cwd') || '', componentPath);
       componentPath = require.resolve(componentPath);
 
@@ -58,22 +62,16 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
     });
 
     // add route config
-    vscode.commands.registerCommand('extension.addRoute', (item) => {
+    vscode.commands.registerCommand('extension.addRoute', () => {
+      const item = this._routeViewer.selection[0] || null;
       const cwd = this._context.globalState.get('cwd') as string;
 
       if (cwd) {
         const configFilePath = getConfigFile(cwd);
 
         fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
-          let config: {
-            [key: string]: any;
-          } = {};
-          try {
-            config = JSON.parse(content);
-          } catch(err) {};
-
           // get routes from config
-          if (!err && config.routes) {
+          if (!err && this._umiUI.service?.getConfig()?.routes) {
             const newContent = await babelRecast(content, {
               plugins: [require.resolve('@babel/plugin-syntax-typescript')],
             }, {
@@ -104,21 +102,18 @@ export class RouteProvider implements vscode.TreeDataProvider<RouteTreeItem> {
     })
 
     // remove route config
-    vscode.commands.registerCommand('extension.removeRoute', (item) => {
+    vscode.commands.registerCommand('extension.removeRoute', () => {
+      const item = this._routeViewer.selection[0];
+      if (!item) return;
+
       const cwd = this._context.globalState.get('cwd') as string;
+
       if (cwd) {
         const configFilePath = getConfigFile(cwd);
 
         fs.readFile(configFilePath, { encoding: 'utf8' }, async (err, content) => {
-          let config: {
-            [key: string]: any;
-          } = {};
-          try {
-            config = JSON.parse(content);
-          } catch(err) {};
-
           // get routes from config
-          if (!err && config.routes) {
+          if (!err && this._umiUI.service?.getConfig()?.routes) {
             const newContent = await babelRecast(content, {
               plugins: [require.resolve('@babel/plugin-syntax-typescript')],
             }, {
@@ -184,7 +179,7 @@ export class RouteTreeItem extends vscode.TreeItem {
     this.command = !route.redirect ? {
       title: 'View Route Component',
       command: 'extension.openRouteComponentDocument',
-      arguments: [route.component],
+      arguments: [this],
     } : undefined;
   }
 

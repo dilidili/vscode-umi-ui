@@ -39,15 +39,15 @@
 		"commands": [
 			{
 				"command": "extension.umiUI",
-				"title": "UmiUI: Start"
+				"title": "Umi UI: Start"
 			},
 			{
 				"command": "extension.openUmiConfig",
-				"title": "UmiUI: Config"
+				"title": "Umi UI: Config"
 			},
 			{
 				"command": "extension.inspectWebpackConfig",
-				"title": "UmiUI: Inspect Webpack Config",
+				"title": "Umi UI: Inspect Webpack Config",
 				"icon": {
 					"light": "media/light/refresh.svg",
 					"dark": "media/dark/refresh.svg"
@@ -89,19 +89,19 @@
 					"command": "extension.inspectWebpackConfig",
 					"when": "viewItem == webpackProdConfig",
 					"group": "inline"
-				},
-				{
-					"command": "extension.removeRoute",
-					"when": "viewItem == routeTreeItem",
-					"group": "inline"
-				},
-				{
-					"command": "extension.addRoute",
-					"when": "viewItem == routeTreeItem",
-					"group": "inline"
 				}
 			],
 			"view/title": [
+				{
+					"command": "extension.addRoute",
+					"when": "view == route",
+					"group": "navigation"
+				},
+				{
+					"command": "extension.removeRoute",
+					"when": "view == route",
+					"group": "navigation"
+				},
 				{
 					"command": "extension.refreshRoutes",
 					"when": "view == route",
