@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigProvider, } from './configExplorer';
 import { RouteProvider } from './route/RouteProvider';
 import { activate as activateVirtualDocument } from './TextDocumentProvider';
+import activateCompletion from './completion';
 import UmiUI from './UmiUI';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -19,6 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('extension.umiUI', async () => {
 		await umiUI.start();
 	});
+
+	activateCompletion(context);
 
 	context.subscriptions.push(disposable);
 }
