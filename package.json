@@ -31,6 +31,10 @@
 					"name": "Route"
 				},
 				{
+					"id": "model",
+					"name": "Model"
+				},
+				{
 					"id": "config",
 					"name": "Config"
 				}
