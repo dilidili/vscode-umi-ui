@@ -4,3 +4,6 @@ node_modules
 *.vsix
 yarn.lock
 *.DS_Store
+.pnp.js
+.yarn
+package-lock.json
